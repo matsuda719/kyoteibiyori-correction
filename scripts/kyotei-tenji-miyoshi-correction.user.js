@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kyotei Tenji Miyoshi Correction
 // @namespace    https://kyoteibiyori.com/
-// @version      1.2.0
+// @version      1.2.1
 // @description  展示情報（展示・周回・周り足・直線）を艇番号別に補正し、補正後の順位で色分け表示。SUM理論（展示+周回）も表示。
 // @author       matsuda719
 // @match        *://kyoteibiyori.com/race_shusso.php*
