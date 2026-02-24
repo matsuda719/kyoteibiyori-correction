@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kyotei Tenji Miyoshi Correction
 // @namespace    https://kyoteibiyori.com/
-// @version      1.2.1
+// @version      1.3.0
 // @description  展示情報（展示・周回・周り足・直線）を艇番号別に補正し、補正後の順位で色分け表示。SUM理論（展示+周回）も表示。
 // @author       matsuda719
 // @match        *://kyoteibiyori.com/race_shusso.php*
@@ -40,28 +40,38 @@
       .map((v, i) => ({ value: v, index: i }))
       .sort((a, b) => a.value - b.value);
     const cells = row.querySelectorAll("td");
-    cells.forEach(cell => {
-      cell.style.backgroundColor = "";
-      cell.style.color = "";
-    });
+    // 1位: 赤背景+白文字
     cells[sorted[0].index + 1].style.backgroundColor = "#e74c3c";
+    cells[sorted[0].index + 1].style.color = "#fff";
+    // 2位: 黄色背景
     cells[sorted[1].index + 1].style.backgroundColor = "#f1c40f";
   }
 
   function createDataRow(label, values, isSumRow) {
     const tr = document.createElement("tr");
+
+    // ラベルセル（元の行のヘッダに合わせる）
     const th = document.createElement("td");
     th.textContent = label;
+    th.style.textAlign = "center";
+    th.style.backgroundColor = "#e8e8e8";
+    th.style.fontSize = "12px";
+    th.style.padding = "4px 8px";
+    th.style.whiteSpace = "nowrap";
     if (isSumRow) {
       th.style.fontWeight = "bold";
-      th.style.backgroundColor = "#f0f0f0";
+      th.style.backgroundColor = "#d0d0d0";
     }
     tr.appendChild(th);
 
+    // 数値セル（元の行のデータセルに合わせる）
     values.forEach(v => {
       const td = document.createElement("td");
       td.textContent = v != null ? v.toFixed(2) : "-";
       td.style.textAlign = "center";
+      td.style.fontWeight = "bold";
+      td.style.fontSize = "14px";
+      td.style.padding = "4px 8px";
       if (isSumRow) td.style.backgroundColor = "#f0f0f0";
       tr.appendChild(td);
     });
