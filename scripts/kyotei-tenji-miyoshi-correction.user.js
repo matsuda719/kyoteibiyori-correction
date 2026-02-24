@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kyotei Tenji Miyoshi Correction
 // @namespace    https://kyoteibiyori.com/
-// @version      1.3.2
+// @version      1.4.1
 // @description  展示情報（展示・周回・周り足・直線）を艇番号別に補正し、補正後の順位で色分け表示。SUM理論（展示+周回）も表示。
 // @author       matsuda719
 // @match        *://kyoteibiyori.com/race_shusso.php*
@@ -35,44 +35,75 @@
     return boatNumbers.slice(0, 6);
   }
 
-  function applyRankingColor(row, values) {
+  function applyRankingColor(row, values, refRow) {
     const sorted = [...values]
       .map((v, i) => ({ value: v, index: i }))
       .sort((a, b) => a.value - b.value);
     const cells = row.querySelectorAll("td");
-    // 1位: 赤背景+白文字
+
+    if (refRow) {
+      // 元の行から1位・2位のスタイルを取得
+      const refCells = refRow.querySelectorAll("td");
+      const refSorted = [];
+      refCells.forEach((cell, idx) => {
+        if (idx === 0) return;
+        const bg = window.getComputedStyle(cell).backgroundColor;
+        if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+          refSorted.push({ bg, color: window.getComputedStyle(cell).color });
+        }
+      });
+
+      if (refSorted.length >= 2) {
+        // 1位
+        cells[sorted[0].index + 1].style.backgroundColor = refSorted[0].bg;
+        cells[sorted[0].index + 1].style.color = refSorted[0].color;
+        // 2位
+        cells[sorted[1].index + 1].style.backgroundColor = refSorted[1].bg;
+        cells[sorted[1].index + 1].style.color = refSorted[1].color;
+        return;
+      }
+    }
+
+    // フォールバック
     cells[sorted[0].index + 1].style.backgroundColor = "#e74c3c";
     cells[sorted[0].index + 1].style.color = "#fff";
-    // 2位: 黄色背景
     cells[sorted[1].index + 1].style.backgroundColor = "#f1c40f";
   }
 
-  function createDataRow(label, values, isSumRow) {
+  function createDataRow(label, values, isSumRow, refRow) {
     const tr = document.createElement("tr");
+    const refCells = refRow.querySelectorAll("td");
 
-    // ラベルセル（元の行のヘッダに合わせる）
+    // ラベルセル（元の行の最初のセルからスタイルをコピー）
     const th = document.createElement("td");
     th.textContent = label;
-    th.style.textAlign = "center";
-    th.style.backgroundColor = "#4a6fa5";
-    th.style.color = "#fff";
-    th.style.fontSize = "11px";
-    th.style.padding = "4px 8px";
-    th.style.whiteSpace = "nowrap";
-    if (isSumRow) {
-      th.style.fontWeight = "bold";
-      th.style.backgroundColor = "#3a5a8a";
+    if (refCells[0]) {
+      const refStyle = window.getComputedStyle(refCells[0]);
+      th.style.textAlign = refStyle.textAlign;
+      th.style.backgroundColor = refStyle.backgroundColor;
+      th.style.color = refStyle.color;
+      th.style.fontSize = refStyle.fontSize;
+      th.style.fontWeight = refStyle.fontWeight;
+      th.style.padding = refStyle.padding;
+      th.style.whiteSpace = "nowrap";
     }
+    if (isSumRow) th.style.fontWeight = "bold";
     tr.appendChild(th);
 
-    // 数値セル（元の行のデータセルに合わせる）
+    // 数値セル（元の行のデータセルからスタイルをコピー）
+    const refDataCell = refCells[1];
+    const refDataStyle = refDataCell ? window.getComputedStyle(refDataCell) : null;
+
     values.forEach(v => {
       const td = document.createElement("td");
       td.textContent = v != null ? v.toFixed(2) : "-";
-      td.style.textAlign = "center";
-      td.style.fontWeight = "bold";
-      td.style.fontSize = "16px";
-      td.style.padding = "4px 8px";
+      if (refDataStyle) {
+        td.style.textAlign = refDataStyle.textAlign;
+        td.style.fontWeight = refDataStyle.fontWeight;
+        td.style.fontSize = refDataStyle.fontSize;
+        td.style.padding = refDataStyle.padding;
+        td.style.fontFamily = refDataStyle.fontFamily;
+      }
       if (isSumRow) td.style.backgroundColor = "#f0f0f0";
       tr.appendChild(td);
     });
@@ -140,24 +171,25 @@
     let insertAfter = chokusenRow;
 
     // SUM(元)
-    const sumOrigRow = createDataRow("SUM(元)", sumOriginal, true);
+    const refRow = targetRows["展示"];
+    const sumOrigRow = createDataRow("SUM(元)", sumOriginal, true, refRow);
     insertAfter.parentNode.insertBefore(sumOrigRow, insertAfter.nextSibling);
-    applyRankingColor(sumOrigRow, sumOriginal.map(v => v != null ? v : Infinity));
+    applyRankingColor(sumOrigRow, sumOriginal.map(v => v != null ? v : Infinity), refRow);
     insertAfter = sumOrigRow;
 
     // 補正行（展示〜直線）
     const labels = ["展示", "周回", "周り足", "直線"];
     labels.forEach(label => {
-      const corrRow = createDataRow(label + "（補正）", correctedData[label], false);
+      const corrRow = createDataRow(label + "（補正）", correctedData[label], false, targetRows[label]);
       insertAfter.parentNode.insertBefore(corrRow, insertAfter.nextSibling);
-      applyRankingColor(corrRow, correctedData[label].map(v => v != null ? v : Infinity));
+      applyRankingColor(corrRow, correctedData[label].map(v => v != null ? v : Infinity), targetRows[label]);
       insertAfter = corrRow;
     });
 
     // SUM(補正)
-    const sumCorrRow = createDataRow("SUM(補正)", sumCorrected, true);
+    const sumCorrRow = createDataRow("SUM(補正)", sumCorrected, true, refRow);
     insertAfter.parentNode.insertBefore(sumCorrRow, insertAfter.nextSibling);
-    applyRankingColor(sumCorrRow, sumCorrected.map(v => v != null ? v : Infinity));
+    applyRankingColor(sumCorrRow, sumCorrected.map(v => v != null ? v : Infinity), refRow);
   }
 
   setTimeout(correctTenjiRows, 2000);
