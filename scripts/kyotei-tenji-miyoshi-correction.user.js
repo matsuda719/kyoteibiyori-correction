@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kyotei Tenji Miyoshi Correction
 // @namespace    https://kyoteibiyori.com/
-// @version      1.3.0
+// @version      1.3.2
 // @description  展示情報（展示・周回・周り足・直線）を艇番号別に補正し、補正後の順位で色分け表示。SUM理論（展示+周回）も表示。
 // @author       matsuda719
 // @match        *://kyoteibiyori.com/race_shusso.php*
@@ -54,13 +54,14 @@
     const th = document.createElement("td");
     th.textContent = label;
     th.style.textAlign = "center";
-    th.style.backgroundColor = "#e8e8e8";
-    th.style.fontSize = "12px";
+    th.style.backgroundColor = "#4a6fa5";
+    th.style.color = "#fff";
+    th.style.fontSize = "11px";
     th.style.padding = "4px 8px";
     th.style.whiteSpace = "nowrap";
     if (isSumRow) {
       th.style.fontWeight = "bold";
-      th.style.backgroundColor = "#d0d0d0";
+      th.style.backgroundColor = "#3a5a8a";
     }
     tr.appendChild(th);
 
@@ -70,7 +71,7 @@
       td.textContent = v != null ? v.toFixed(2) : "-";
       td.style.textAlign = "center";
       td.style.fontWeight = "bold";
-      td.style.fontSize = "14px";
+      td.style.fontSize = "16px";
       td.style.padding = "4px 8px";
       if (isSumRow) td.style.backgroundColor = "#f0f0f0";
       tr.appendChild(td);
