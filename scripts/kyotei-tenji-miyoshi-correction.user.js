@@ -110,8 +110,7 @@
         correctedData[label].push(corrected);
       });
 
-      // 元の行に色分け
-      applyRankingColor(row, originalData[label].map(v => v != null ? v : Infinity));
+      // 元の行はオリジナルのまま（色分けしない）
     });
 
     // 直線行の後にSUM(元)を挿入
